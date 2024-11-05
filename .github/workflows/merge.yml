@@ -1,0 +1,40 @@
+name: App Merge Workflow
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Build Docker image
+        run: |
+          docker build -t flask-app:latest .
+
+      - name: Log in to Amazon ECR
+        run: |
+          aws ecr get-login-password --region us-west-1 | docker login --username AWS --password-stdin <account-id>.dkr.ecr.us-west-1.amazonaws.com
+
+      - name: Tag and push Docker image
+        run: |
+          docker tag flask-app:latest <account-id>.dkr.ecr.us-west-1.amazonaws.com/flas-app:latest
+          docker push <account-id>.dkr.ecr.us-west-1.amazonaws.com/flask-app:latest
+
+  apply-k8s-manifest:
+    runs-on: ubuntu-latest
+    needs: build-and-publish
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      ###This does not account for a authentication to an EKS cluster. I also wouldn't actually want this here.
+      ###Instead I would use argoCD and the argo image updater to create a hub and spoke model of continuous delivery across N number of clusters
+      - name: Apply Kubernetes Manifests
+        run: |
+          kubectl apply -f k8s/flask-app.yaml
+          kubectl apply -f path/to/your/hpa-manifest.yaml
