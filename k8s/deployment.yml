@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: product-recommendation
+  labels:
+    app: product-recommendation
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: product-recommendation
+  template:
+    metadata:
+      labels:
+        app: product-recommendation
+      annotations:
+        # ALB annotations for AWS Load Balancer
+        alb.ingress.kubernetes.io/scheme: internet-facing
+        alb.ingress.kubernetes.io/target-type: ip
+        # annotation for karpenter scaling
+        karpenter.sh/capacity-type: spot
+    spec:
+      containers:
+      - name: product-recommendation
+        image: <account-id>.dkr.ecr.us-west-1.amazonaws.com/platform-images:latest
+        ports:
+        - containerPort: 5000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: product-recommendation-service
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 5000
+  selector:
+    app: product-recommendation
