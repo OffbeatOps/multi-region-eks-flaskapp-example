@@ -16,4 +16,4 @@ spec:
               service:
                 name: product-recommendation-svc
                 port:
-                  number: 5000  # Change to the appropriate port if necessary
+                  number: 5000
